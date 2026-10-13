@@ -1,50 +1,55 @@
-# Jungle Assist — Un plan de jeu League of Legends à partir d'une composition
+# Jungle Assist — League of Legends game plans from a team composition
+
+🇫🇷 [Version française](README.fr.md)
 
 [![tests](https://github.com/mimouniahmed/Jungle-assist/actions/workflows/tests.yml/badge.svg)](https://github.com/mimouniahmed/Jungle-assist/actions/workflows/tests.yml)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Pipeline de données **de bout en bout** : collecte de **12 482 parties classées** via l'API Riot Games, modèle **XGBoost** de prédiction de victoire, explicabilité **SHAP**, puis rédaction d'un **plan de jeu** en langage naturel par un LLM (API Claude).
+An **end-to-end** data pipeline: **12,482 ranked matches** collected from the Riot Games API, an **XGBoost** win-prediction model, **SHAP** explainability, and a natural-language **game plan** written by an LLM (Claude API).
 
-**Question** : face à une composition donnée (5 champions contre 5), sur quels faits de jeu une équipe doit-elle concentrer ses efforts, et via quel champion ?
+**Question**: given a composition (5 champions vs 5), which in-game facts should a team focus on, and through which champion?
 
 ```
-Riot API ──► SQLite ──► pandas ──► XGBoost + SHAP ──► classement des faits ──► LLM ──► CLI
-(ingestion)  (brut)    (features)   (modèle)          par composition          (plan de jeu)
+Riot API ──► SQLite ──► pandas ──► XGBoost + SHAP ──► per-composition ──► LLM ──► CLI
+(ingestion)  (raw)     (features)   (model)          fact ranking           (game plan)
 ```
 
-## Résultats clés
+## Key results
 
 | | |
 |---|---|
-| **Données** | 12 482 parties collectées par *snowball sampling*, dont 12 346 parties 5v5 valides, soit **123 460 lignes** (match × joueur) et 173 champions |
-| **Modèle** | XGBoost sur 27 faits de début de partie + champion + rôle, split 60/20/20 **par match** |
-| **Performance (test)** | Accuracy **0,780**, ROC-AUC **0,860**, F1 0,786, log loss 0,465, Brier 0,152 (référence naïve : 0,50) |
-| **Calibration** | Quasi parfaite : quand le modèle annonce 70 % de victoire, l'équipe gagne effectivement ~70 % du temps |
-| **Explicabilité** | Importance SHAP globale + **interactions champion × fait** (4 844 couples), agrégées en un classement propre à chaque composition |
-| **Produit** | Une CLI qui prend 10 champions, saisis à la main ou lus depuis une partie en cours, et renvoie un plan de jeu argumenté |
+| **Data** | 12,482 matches collected by *snowball sampling*, 12,346 of them valid 5v5 games, i.e. **123,460 rows** (match × player) and 173 champions |
+| **Model** | XGBoost on 27 early-game facts + champion + role, 60/20/20 split **by match** |
+| **Performance (test)** | Accuracy **0.780**, ROC-AUC **0.860**, F1 0.786, log loss 0.465, Brier 0.152 (naive baseline: 0.50) |
+| **Calibration** | Near-perfect: when the model predicts a 70% win chance, the team actually wins ~70% of the time |
+| **Explainability** | Global SHAP importance + **champion × fact interactions** (4,844 pairs), aggregated into a ranking specific to each composition |
+| **Product** | A CLI that takes 10 champions, typed in or read from a live game, and returns a reasoned game plan |
 
 <p align="center">
-  <img src="docs/figures/shap_importance.png" alt="Importance SHAP globale des faits de jeu" width="48%">
-  <img src="docs/figures/calibration.png" alt="Courbe de calibration du modèle" width="40%">
+  <img src="docs/figures/shap_importance.png" alt="Global SHAP importance of in-game facts" width="48%">
+  <img src="docs/figures/calibration.png" alt="Model calibration curve" width="40%">
 </p>
 
-## Points techniques marquants
+## Technical highlights
 
-- **Détection et correction de fuites de données**, la partie la plus délicate du projet :
-  - `maxKillDeficit` valait toujours 0 chez les perdants : le champ encodait presque le résultat. La règle de détection a été généralisée à tous les champs, plutôt que traitée au cas par cas ;
-  - un premier modèle trop bon (AUC 0,887) était dominé par `earliestBaron`. Le Baron n'apparaît qu'à 20:00 (patch 2026, vérifié), donc ce champ ne pouvait pas être un fait précoce : il s'agissait d'une erreur de classification et non d'un signal. Après correction, l'AUC passe à 0,860 et l'importance est répartie sur des faits légitimes ;
-  - `turretPlatesTaken` était supposé borné à 14 min, mais le patch 26.01 a supprimé cette limite. Vérifié empiriquement (jusqu'à 41 plaques dans les données), le champ a été exclu.
-- **Séparer causes et conséquences** : une équipe qui gagne accumule tours et kills *parce qu'elle gagne déjà*. Le modèle n'utilise donc que des faits de début de partie (avant ~20 min), triés parmi 128 champs Riot.
-- **Granularité adaptée à la question** : une ligne par (match, joueur) plutôt que par équipe, pour garder le lien champion ↔ fait. Les champs « équipe » et « joueur » sont distingués empiriquement, car Riot ne les documente pas.
-- **Évaluation rigoureuse** : `GroupShuffleSplit` par `match_id`, pour que les 10 lignes d'un match ne soient jamais à cheval entre train et test. Recherche d'hyperparamètres sur la validation avec arrêt anticipé, puis une seule évaluation sur le test.
-- **De l'attribution SHAP au conseil** : pour une composition hypothétique, les faits ne sont pas observés. Le classement combine l'importance globale et la **plus forte** interaction parmi les 5 champions (le maximum et non la somme, qui diluait le signal), pour produire un conseil du type « priorise ce fait, via ce champion ».
-- **Ingestion robuste** : client Riot avec rate limiting **proactif** (fenêtre glissante, 100 appels / 120 s) et retry sur `429`, BFS de collecte qui reprend là où il s'était arrêté, filtrage des modes hors sujet (Arena, ARAM).
-- **Abandon argumenté d'une première approche** : une Factorization Machine sur des embeddings de champions. Son terme de contre symétrique (`dot(A,B) = dot(B,A)`) ne peut porter aucun signal quand l'attribution bleu/rouge est arbitraire.
-- **Industrialisation** : package Python installable, commande `lol-assistant`, validation des entrées (faute de frappe → suggestion du champion le plus proche), tests `pytest` sans réseau, intégration continue GitHub Actions.
+- **Detecting and fixing data leakage**, the trickiest part of the project:
+  - `maxKillDeficit` was always 0 for the losing team, so the field nearly encoded the outcome. The detection rule was generalised to every field instead of being handled case by case;
+  - a first model that looked too good (AUC 0.887) was dominated by `earliestBaron`. Baron only spawns at 20:00 (2026 patch, verified), so this field could never be an early-game fact: it was a classification error, not a signal. After the fix, AUC drops to 0.860 and importance is spread across legitimate facts;
+  - `turretPlatesTaken` was assumed to stop at 14 min, but patch 26.01 removed that limit. Confirmed empirically (up to 41 plates in the data), the field was excluded.
+- **Separating causes from consequences**: a winning team piles up towers and kills *because it is already winning*. The model therefore only uses early-game facts (before ~20 min), selected from 128 Riot fields.
+- **Granularity matched to the question**: one row per (match, player) rather than per team, to keep the champion ↔ fact link. "Team" and "player" fields are told apart empirically, since Riot does not document them.
+- **Rigorous evaluation**: `GroupShuffleSplit` on `match_id`, so the 10 rows of a match never straddle train and test. Hyperparameter search on the validation set with early stopping, then a single evaluation on the test set.
+- **From SHAP attribution to advice**: for a hypothetical composition, the facts are not observed. The ranking combines global importance with the **strongest** interaction among the 5 champions (the maximum rather than the sum, which diluted the signal), producing advice such as "prioritise this fact, through this champion".
+- **Robust ingestion**: a Riot client with **proactive** rate limiting (sliding window, 100 calls / 120 s) and retry on `429`, a collection BFS that resumes where it stopped, and filtering of off-topic modes (Arena, ARAM).
+- **A first approach dropped for a stated reason**: a Factorization Machine on champion embeddings. Its symmetric counter term (`dot(A,B) = dot(B,A)`) cannot carry any signal when the blue/red side assignment is arbitrary.
+- **Engineering**: an installable Python package, a `lol-assistant` command, input validation (a typo returns the closest champion name), network-free `pytest` tests, and GitHub Actions CI.
 
-➡️ **[Journal technique détaillé](docs/journal.md)** (chaque décision, erreur et correction, phase par phase) · **[Guide d'exploration Power BI](docs/powerbi_guide.md)**
+➡️ **[Detailed technical log](docs/journal.md)** (every decision, error and fix, phase by phase) · **[Power BI exploration guide](docs/powerbi_guide.md)**
 
-## Exemple d'utilisation
+> The notebooks, the technical log, and the CLI and generated game plans are in French.
+
+## Usage example
 
 ```
 $ lol-assistant
@@ -57,7 +62,7 @@ Votre équipe (5 champions séparés par des virgules) : Jayce, Sylas, Yone, Yun
 Équipe adverse (5 champions séparés par des virgules) : Darius, Lee Sin, Ahri, Jinx, Thresh
 ```
 
-Pour cette équipe, le classement fait ressortir `voidMonsterKill` (via Jayce), `firstTurretKilledTime` (Yone), l'avance de niveau en lane (Sylas), le premier dragon et l'avantage de vision (Lulu). Le LLM transforme ce classement, ainsi que celui de l'équipe adverse, en plan de jeu rédigé.
+For this team, the ranking highlights `voidMonsterKill` (through Jayce), `firstTurretKilledTime` (Yone), the level lead in lane (Sylas), first dragon and vision advantage (Lulu). The LLM turns this ranking, together with the enemy team's, into a written game plan.
 
 ## Installation
 
@@ -67,38 +72,42 @@ cd Jungle-assist
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e ".[dev]"
-cp .env.example .env       # renseigner RIOT_API_KEY et ANTHROPIC_API_KEY
-pytest                     # tests unitaires, sans réseau ni clé
+cp .env.example .env       # fill in RIOT_API_KEY and ANTHROPIC_API_KEY
+pytest                     # unit tests, no network or key needed
 ```
 
-Les données (`data/` : base SQLite, modèle, artefacts SHAP) ne sont pas versionnées. Pour les reconstituer : `python scripts/collect_dataset.py <heures>`, puis exécuter `notebooks/03_model_training.ipynb`, qui produit le modèle et les artefacts SHAP lus par la CLI.
+The data (`data/`: SQLite database, model, SHAP artefacts) is not versioned. To rebuild it, run `python scripts/collect_dataset.py <hours>`, then `notebooks/03_model_training.ipynb`, which produces the model and the SHAP artefacts read by the CLI.
 
-## Structure du projet
+## Project structure
 
 ```
-├── lol_assistant/               # package Python
-│   ├── riot_client.py           # client Riot API (Account, Match-V5, Spectator-V5)
-│   ├── rate_limiter.py          # rate limiting proactif à fenêtre glissante
-│   ├── database.py              # stockage SQLite (JSON brut, dédoublonnage)
-│   ├── crawler.py               # collecte snowball (BFS), filtre de mode de jeu
-│   ├── game_plan.py             # classement des faits par composition + prompt + LLM
-│   ├── live_game.py             # composition lue depuis une partie en cours
-│   └── cli.py                   # interface en ligne de commande
+├── lol_assistant/               # Python package
+│   ├── riot_client.py           # Riot API client (Account, Match-V5, Spectator-V5)
+│   ├── rate_limiter.py          # proactive sliding-window rate limiting
+│   ├── database.py              # SQLite storage (raw JSON, deduplication)
+│   ├── crawler.py               # snowball collection (BFS), game-mode filter
+│   ├── game_plan.py             # per-composition fact ranking + prompt + LLM
+│   ├── live_game.py             # composition read from a live game
+│   └── cli.py                   # command-line interface
 ├── notebooks/
-│   ├── 01_riot_api_basics.ipynb       # exploration de l'API Riot
-│   ├── 02_dataset_collection.ipynb    # pipeline de collecte
-│   ├── 03_model_training.ipynb        # features, fuites, XGBoost, SHAP
-│   └── 04_llm_game_plan.ipynb         # génération du plan de jeu
-├── scripts/collect_dataset.py   # collecte longue durée, bornée dans le temps
-├── tests/                       # tests pytest (sans réseau)
-└── docs/                        # journal technique, guide Power BI, figures
+│   ├── 01_riot_api_basics.ipynb       # Riot API exploration
+│   ├── 02_dataset_collection.ipynb    # collection pipeline
+│   ├── 03_model_training.ipynb        # features, leakage, XGBoost, SHAP
+│   └── 04_llm_game_plan.ipynb         # game plan generation
+├── scripts/collect_dataset.py   # long-running, time-bounded collection
+├── tests/                       # pytest tests (no network)
+└── docs/                        # technical log, Power BI guide, figures
 ```
 
-## Limites
+## Limitations
 
-- Les classements reflètent des **corrélations** apprises sur de la solo queue EUW, pas des effets causaux. Certains indicateurs de lane (`maxLevelLeadLaneOpponent`) restent en partie des conséquences d'une lane qui se passe bien.
-- Le LLM complète les données avec sa connaissance générale du jeu : le plan final n'est donc pas traçable à 100 % aux statistiques.
-- Piste d'amélioration documentée dans le journal : reconstruire les features depuis l'API Timeline (instantanés à 10, 15 et 20 min) plutôt que depuis les agrégats `challenges` de Riot.
+- The rankings reflect **correlations** learned on EUW solo queue, not causal effects. Some lane indicators (`maxLevelLeadLaneOpponent`) are still partly consequences of a lane going well.
+- The LLM supplements the data with its general knowledge of the game, so the final plan is not 100% traceable to the statistics.
+- A documented next step (see the log): rebuild the features from the Timeline API (snapshots at 10, 15 and 20 min) rather than from Riot's `challenges` aggregates.
+
+## License
+
+[MIT](LICENSE) © 2026 Ahmed Mimouni.
 
 ---
 

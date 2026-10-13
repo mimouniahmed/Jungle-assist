@@ -1,6 +1,6 @@
 # Journal technique — Jungle Assist
 
-Journal de bord détaillé du projet, phase par phase : décisions, erreurs détectées et corrigées, alternatives écartées. Pour la vue d'ensemble, voir le [README](../README.md).
+Journal de bord détaillé du projet, phase par phase : décisions, erreurs détectées et corrigées, alternatives écartées. Pour la vue d'ensemble, voir le [README](../README.fr.md).
 
 Projet éducatif : construire, étape par étape, un assistant qui aide un joueur de League of Legends à établir un **plan de jeu** à partir d'une **composition d'équipe** (10 champions, 2 équipes). L'objectif premier est d'apprendre — l'API Riot Games, le ML, et l'intégration d'un LLM — pas de livrer un produit fini rapidement.
 

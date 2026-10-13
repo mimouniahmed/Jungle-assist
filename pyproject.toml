@@ -5,8 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lol-assistant"
 version = "0.1.0"
-description = "Plan de jeu League of Legends à partir d'une composition : Riot API, XGBoost + SHAP, Claude API"
+description = "League of Legends game plans from a team composition: Riot API, XGBoost + SHAP, Claude API"
 readme = "README.md"
+license = { text = "MIT" }
 authors = [{ name = "Ahmed Mimouni", email = "amimouni.cs@gmail.com" }]
 requires-python = ">=3.9"
 dependencies = [
