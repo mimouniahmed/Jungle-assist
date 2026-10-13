@@ -8,10 +8,10 @@ CHAMPION_MAP_CACHE = DATA_DIR / "champion_id_map.json"
 
 
 def get_champion_id_to_name(cache_path=CHAMPION_MAP_CACHE):
-    """Associe chaque championId numérique (tel que renvoyé par Spectator-V5) au nom du
-    champion (le même format que partout ailleurs dans le projet : dataset, SHAP, game_plan.py).
-    Source : Data Dragon, le CDN statique et non authentifié de Riot pour les données de jeu
-    (pas besoin de clé API). Mis en cache localement pour ne pas re-télécharger à chaque appel."""
+    """Maps each numeric championId (as returned by Spectator-V5) to the champion name (the
+    same format used everywhere else in the project: dataset, SHAP, game_plan.py).
+    Source: Data Dragon, Riot's static, unauthenticated CDN for game data (no API key
+    needed). Cached locally to avoid downloading it on every call."""
     if cache_path.exists():
         with open(cache_path) as f:
             return json.load(f)
@@ -31,14 +31,13 @@ def get_champion_id_to_name(cache_path=CHAMPION_MAP_CACHE):
 
 
 def get_composition_from_active_game(riot_client, game_name, tag_line):
-    """Raccourci de saisie : au lieu de taper 10 noms de champions à la main, on les récupère
-    depuis la partie en cours d'un joueur (Spectator-V5). Une fois les deux équipes extraites,
-    la partie en cours elle-même n'est plus utilisée — ni son état (kills, or, timers) ni son
-    résultat, seuls les 10 noms de champions comptent, exactement comme pour une composition
-    saisie à la main. Ça ne change pas le contrat du produit (composition hypothétique en
-    entrée), ça change juste comment on la saisit.
+    """Input shortcut: instead of typing 10 champion names by hand, read them from a player's
+    live game (Spectator-V5). Once both teams are extracted, the live game itself is no longer
+    used — neither its state (kills, gold, timers) nor its outcome; only the 10 champion names
+    matter, exactly as for a hand-typed composition. This does not change the product contract
+    (a hypothetical composition as input), only how it is entered.
 
-    Lève une ValueError si le joueur n'est pas en partie actuellement."""
+    Raises ValueError if the player is not currently in a game."""
     puuid = riot_client.get_puuid(game_name, tag_line)
     game = riot_client.get_active_game(puuid)
     if game is None:

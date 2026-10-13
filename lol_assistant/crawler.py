@@ -5,7 +5,7 @@ import requests
 
 from . import database
 
-WANTED_GAME_MODE = "CLASSIC"  # exclut ARAM, Arena (CHERRY), URF... — seulement le 5v5 Summoner's Rift classique
+WANTED_GAME_MODE = "CLASSIC"  # excludes ARAM, Arena (CHERRY), URF... — classic 5v5 Summoner's Rift only
 
 
 def crawl_matches(riot_client, conn, seed_puuids, target_count, matches_per_player=10, max_duration_seconds=None):
@@ -44,14 +44,14 @@ def crawl_matches(riot_client, conn, seed_puuids, target_count, matches_per_play
                 print(f"Erreur pour le match {match_id} ({exc}), on passe.")
                 continue
 
-            # snowball : les 10 participants de ce match deviennent de nouvelles graines,
-            # qu'on garde ce match ou non (ce sont de vrais joueurs, quel que soit le mode)
+            # snowball: the 10 participants of this match become new seeds, whether or not
+            # the match is kept (they are real players, whatever the game mode)
             for participant_puuid in match_data["metadata"]["participants"]:
                 if not database.player_already_explored(conn, participant_puuid):
                     queue.append(participant_puuid)
 
             if match_data["info"].get("gameMode") != WANTED_GAME_MODE:
-                continue  # hors-sujet (ARAM, Arena...) : pas de raison de le stocker
+                continue  # off-topic (ARAM, Arena...): no reason to store it
 
             database.save_match(conn, match_id, riot_client.region, match_data)
             collected += 1

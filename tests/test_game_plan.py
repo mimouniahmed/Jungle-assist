@@ -25,7 +25,7 @@ def artifacts():
         for feat in global_importance.index:
             rows.append({"champion": champ, "feature": feat, "mean_abs_interaction": 0.01})
     interactions = pd.DataFrame(rows)
-    # Lulu dépend fortement de la vision : assez pour faire passer le fait en tête
+    # Lulu depends heavily on vision: enough to push that fact to the top
     interactions.loc[
         (interactions.champion == "Lulu") & (interactions.feature == "visionScoreAdvantageLaneOpponent"),
         "mean_abs_interaction",

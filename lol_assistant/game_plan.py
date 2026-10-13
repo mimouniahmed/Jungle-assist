@@ -8,18 +8,18 @@ from dotenv import load_dotenv
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-# Sonnet 5 par défaut : tâche de rédaction assez "gabarisée" (données structurées -> texte),
-# pas besoin du modèle le plus capable. Passer model="claude-opus-5" pour la meilleure qualité.
+# Sonnet 5 by default: a fairly templated writing task (structured data -> text), the most
+# capable model is not needed. Pass model="claude-opus-5" for the best quality.
 DEFAULT_MODEL = "claude-sonnet-5"
 
-# "champion" et "role" apparaissent dans les CSV exportés (oubli du filtre dans le notebook
-# d'entraînement) mais ce ne sont pas des faits de jeu actionnables — à exclure du classement.
+# "champion" and "role" appear in the exported CSVs (filter missing in the training notebook)
+# but they are not actionable in-game facts — excluded from the ranking.
 NON_FACT_COLUMNS = {"champion", "role"}
 
 
 def load_ranking_artifacts(data_dir=DATA_DIR):
-    """Charge les deux artefacts nécessaires à composition_fact_ranking, produits par
-    notebooks/03_model_training.ipynb (étapes 1 et 2 de l'analyse SHAP)."""
+    """Loads the two artefacts needed by composition_fact_ranking, produced by
+    notebooks/03_model_training.ipynb (steps 1 and 2 of the SHAP analysis)."""
     global_importance = (
         pd.read_csv(data_dir / "global_shap_importance.csv")
         .set_index("feature")["mean_abs_shap"]
@@ -42,12 +42,12 @@ def _validate_team(champions, known_champions):
 
 
 def composition_fact_ranking(champions, global_importance, interactions):
-    """champions : liste de 5 noms de champions (une équipe). Renvoie un classement des faits
-    de jeu par importance estimée pour cette équipe précise (global + le champion le plus
-    concerné, pas une somme — voir notebooks/03_model_training.ipynb, Concept 19).
+    """champions: list of 5 champion names (one team). Returns a ranking of in-game facts by
+    estimated importance for this specific team (global importance + the most affected
+    champion, not a sum — see notebooks/03_model_training.ipynb, Concept 19).
 
-    Lève une ValueError si la liste n'a pas exactement 5 noms, ou si un nom de champion
-    n'est pas reconnu (avec une suggestion si un nom proche existe)."""
+    Raises ValueError if the list does not have exactly 5 names, or if a champion name is
+    not recognised (with a suggestion when a close name exists)."""
     _validate_team(champions, set(interactions["champion"].unique()))
 
     features = [f for f in global_importance.index if f not in NON_FACT_COLUMNS]
@@ -86,7 +86,7 @@ def _format_ranking(ranking, top_n):
 
 
 def build_game_plan_prompt(your_team, enemy_team, your_ranking, enemy_ranking, top_n=6):
-    """Construit le prompt envoyé au LLM à partir des deux classements déjà calculés."""
+    """Builds the prompt sent to the LLM from the two precomputed rankings."""
     return f"""Voici une composition League of Legends à analyser.
 
 Notre équipe : {", ".join(your_team)}
@@ -111,8 +111,8 @@ plan, pas un rapport de données."""
 
 
 def generate_game_plan(your_team, enemy_team, client=None, model=DEFAULT_MODEL, data_dir=DATA_DIR):
-    """Pipeline complet : classement des faits pour les deux équipes (aucun appel modèle/SHAP,
-    juste une lecture des artefacts déjà calculés) + narration par un LLM Claude."""
+    """Full pipeline: fact ranking for both teams (no model/SHAP call, only a read of the
+    precomputed artefacts) + narration by a Claude LLM."""
     global_importance, interactions = load_ranking_artifacts(data_dir)
     your_ranking = composition_fact_ranking(your_team, global_importance, interactions)
     enemy_ranking = composition_fact_ranking(enemy_team, global_importance, interactions)

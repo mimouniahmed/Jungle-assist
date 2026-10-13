@@ -6,12 +6,12 @@ class RateLimiter:
     def __init__(self, max_calls, period_seconds):
         self.max_calls = max_calls
         self.period_seconds = period_seconds
-        self.call_times = deque()  # timestamps des appels récents
+        self.call_times = deque()  # timestamps of recent calls
 
     def wait_if_needed(self):
         now = time.time()
 
-        # on oublie les appels trop vieux pour compter dans la fenêtre actuelle
+        # drop calls too old to count in the current window
         while self.call_times and now - self.call_times[0] > self.period_seconds:
             self.call_times.popleft()
 

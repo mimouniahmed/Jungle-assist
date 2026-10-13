@@ -1,7 +1,6 @@
-"""Interface en ligne de commande (phase 5) : demande une composition — à la main ou depuis
-une partie en cours — puis génère et affiche le plan de jeu via generate_game_plan. Assemble
-uniquement des briques déjà industrialisées (game_plan.py, live_game.py, riot_client.py),
-aucune nouvelle logique métier ici."""
+"""Command-line interface (phase 5): asks for a composition — typed in or read from a live
+game — then generates and prints the game plan via generate_game_plan. Only wires together
+existing building blocks (game_plan.py, live_game.py, riot_client.py), no new business logic."""
 
 import anthropic
 import requests

@@ -14,8 +14,8 @@ class RiotClient:
         api_key = os.environ["RIOT_API_KEY"]
 
         self.headers = {"X-Riot-Token": api_key}
-        self.region = region  # routage régional (Account-V1, Match-V5) : "europe", "americas"...
-        self.platform = platform  # routage plateforme (Spectator-V5) : "euw1", "na1"...
+        self.region = region  # regional routing (Account-V1, Match-V5): "europe", "americas"...
+        self.platform = platform  # platform routing (Spectator-V5): "euw1", "na1"...
         self.limiter = RateLimiter(max_calls=max_calls, period_seconds=period_seconds)
 
     def _get(self, url, params=None, max_retries=3):
@@ -57,8 +57,8 @@ class RiotClient:
         return response.json()
 
     def get_active_game(self, puuid):
-        """Partie en cours d'un joueur (routage plateforme, pas région). Renvoie None si le
-        joueur n'est pas en partie actuellement (404 — un cas normal, pas une erreur)."""
+        """A player's live game (platform routing, not regional). Returns None if the player
+        is not currently in a game (404 — a normal case, not an error)."""
         url = f"https://{self.platform}.api.riotgames.com/lol/spectator/v5/active-games/by-summoner/{puuid}"
         response = self._get(url)
         if response.status_code == 404:

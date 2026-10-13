@@ -19,7 +19,7 @@ def test_rate_limiter_waits_when_window_is_full(monkeypatch):
     clock["now"] = 1.0
     limiter.wait_if_needed()
     clock["now"] = 2.0
-    limiter.wait_if_needed()  # 3e appel dans la fenêtre : doit attendre la sortie du 1er
+    limiter.wait_if_needed()  # 3rd call in the window: must wait for the 1st to expire
 
     assert sleeps == [pytest.approx(8.0)]
 
@@ -38,7 +38,7 @@ def test_database_deduplicates_matches_and_players():
 
 
 class FakeRiotClient:
-    """Graphe joueurs -> matchs en mémoire, pour tester le snowball sans réseau."""
+    """In-memory player -> match graph, to test the snowball crawl without network."""
 
     region = "europe"
 
@@ -62,7 +62,7 @@ def test_crawler_snowballs_and_keeps_only_classic_games():
     crawl_matches(FakeRiotClient(), conn, seed_puuids="A", target_count=100)
 
     stored = {row[0] for row in conn.execute("SELECT match_id FROM matches")}
-    assert stored == {"M1", "M3"}  # M2 (Arena) exploré pour le snowball, mais pas stocké
+    assert stored == {"M1", "M3"}  # M2 (Arena) explored for the snowball, but not stored
     assert database.player_already_explored(conn, "D")
 
 

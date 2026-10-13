@@ -1,8 +1,8 @@
-"""Collecte à grande échelle : relance le snowball sampling à partir de tous les
-joueurs déjà croisés dans data/matches.db mais jamais explorés, pendant une durée
-maximale donnée plutôt qu'un nombre de matchs fixe.
+"""Large-scale collection: restarts snowball sampling from every player already seen in
+data/matches.db but never explored, for a maximum duration rather than a fixed number of
+matches.
 
-Usage : python scripts/collect_dataset.py [heures] [db_path]
+Usage: python scripts/collect_dataset.py [hours] [db_path]
 """
 import json
 import sys
