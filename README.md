@@ -1,4 +1,4 @@
-# LOL Assistant — Un plan de jeu League of Legends à partir d'une composition
+# Jungle Assist — Un plan de jeu League of Legends à partir d'une composition
 
 [![tests](https://github.com/mimouniahmed/LOL-assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/mimouniahmed/LOL-assistant/actions/workflows/tests.yml)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
@@ -48,7 +48,7 @@ Riot API ──► SQLite ──► pandas ──► XGBoost + SHAP ──► cl
 
 ```
 $ lol-assistant
-=== LOL Assistant — plan de jeu ===
+=== Jungle Assist — plan de jeu ===
 
 1. Saisir les deux compositions à la main
 2. Récupérer la composition depuis la partie en cours d'un joueur (Riot ID)

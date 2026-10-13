@@ -30,7 +30,7 @@ def _prompt_live_composition():
 
 
 def main():
-    print("=== LOL Assistant — plan de jeu ===\n")
+    print("=== Jungle Assist — plan de jeu ===\n")
     print("1. Saisir les deux compositions à la main")
     print("2. Récupérer la composition depuis la partie en cours d'un joueur (Riot ID)")
     mode = input("Choix [1/2] : ").strip()

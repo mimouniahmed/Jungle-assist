@@ -1,4 +1,4 @@
-# Journal technique — LOL Assistant
+# Journal technique — Jungle Assist
 
 Journal de bord détaillé du projet, phase par phase : décisions, erreurs détectées et corrigées, alternatives écartées. Pour la vue d'ensemble, voir le [README](../README.md).
 
