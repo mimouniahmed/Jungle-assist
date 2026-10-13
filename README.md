@@ -1,6 +1,6 @@
 # Jungle Assist — Un plan de jeu League of Legends à partir d'une composition
 
-[![tests](https://github.com/mimouniahmed/LOL-assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/mimouniahmed/LOL-assistant/actions/workflows/tests.yml)
+[![tests](https://github.com/mimouniahmed/Jungle-assist/actions/workflows/tests.yml/badge.svg)](https://github.com/mimouniahmed/Jungle-assist/actions/workflows/tests.yml)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue)
 
 Pipeline de données **de bout en bout** : collecte de **12 482 parties classées** via l'API Riot Games, modèle **XGBoost** de prédiction de victoire, explicabilité **SHAP**, puis rédaction d'un **plan de jeu** en langage naturel par un LLM (API Claude).
@@ -62,8 +62,8 @@ Pour cette équipe, le classement fait ressortir `voidMonsterKill` (via Jayce), 
 ## Installation
 
 ```bash
-git clone https://github.com/mimouniahmed/LOL-assistant.git
-cd LOL-assistant
+git clone https://github.com/mimouniahmed/Jungle-assist.git
+cd Jungle-assist
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e ".[dev]"

@@ -20,7 +20,7 @@ dependencies = [
 dev = ["pytest"]
 
 [project.urls]
-Repository = "https://github.com/mimouniahmed/LOL-assistant"
+Repository = "https://github.com/mimouniahmed/Jungle-assist"
 
 [project.scripts]
 lol-assistant = "lol_assistant.cli:main"
